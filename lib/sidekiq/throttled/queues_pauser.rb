@@ -95,7 +95,7 @@ module Sidekiq
       #
       # @param queue [#to_s]
       # @return [Boolean]
-      def paused?(queue)
+      def throttle_paused?(queue)
         queue = QueueName.normalize queue.to_s
         Sidekiq.redis { |conn| conn.sismember(PAUSED_QUEUES, queue) }
       end

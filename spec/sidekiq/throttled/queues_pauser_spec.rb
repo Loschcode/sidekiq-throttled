@@ -107,7 +107,7 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
     end
   end
 
-  describe "#paused?" do
+  describe "#throttle_paused?" do
     before { pauser.pause! "xxx" }
 
     it "normalizes given queue name" do
@@ -115,17 +115,17 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
         .to receive(:normalize).with("xxx")
         .and_call_original
 
-      pauser.paused? "xxx"
+      pauser.throttle_paused? "xxx"
     end
 
     context "when queue is paused" do
-      subject { pauser.paused? "xxx" }
+      subject { pauser.throttle_paused? "xxx" }
 
       it { is_expected.to be true }
     end
 
     context "when queue is not paused" do
-      subject { pauser.paused? "yyy" }
+      subject { pauser.throttle_paused? "yyy" }
 
       it { is_expected.to be false }
     end

@@ -4,8 +4,8 @@ module Sidekiq
   module Throttled
     module Patches
       module Queue
-        def paused?
-          QueuesPauser.instance.paused? name
+        def throttle_paused?
+          QueuesPauser.instance.throttle_paused? name
         end
 
         def self.apply!
