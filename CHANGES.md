@@ -32,7 +32,7 @@
   Improve documentation bout TTL.
   ([@ziaulrehman40])
 
-* Improve reliability of paused queues, by resyncing list of paused queues
+* Improve reliability of throttle_paused queues, by resyncing list of throttle_paused queues
   on schedule.
   ([@ixti])
 

@@ -71,7 +71,7 @@ RSpec.describe Sidekiq::Throttled::Web, :sidekiq => :enabled do
   end
 
   describe "Enhanced Queues UI", :type => :feature do
-    it "allows resuming paused queues" do
+    it "allows resuming throttle_paused queues" do
       visit "/enhanced-queues"
 
       expect(pauser).to receive(:resume!).with("xxx").and_call_original

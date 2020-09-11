@@ -12,19 +12,19 @@ module Sidekiq
   module Throttled
     # Singleton class used to pause queues from being processed.
     # For the sake of efficiency it uses {Communicator} behind the scene
-    # to notify all processes about paused/resumed queues.
+    # to notify all processes about throttle_paused/resumed queues.
     #
     # @private
     class QueuesPauser
       include Singleton
 
-      # Redis key of Set with paused queues.
+      # Redis key of Set with throttle_paused queues.
       #
       # @return [String]
-      PAUSED_QUEUES = "throttled:X:paused_queues"
-      private_constant :PAUSED_QUEUES
+      throttle_paused_QUEUES = "throttled:X:throttle_paused_queues"
+      private_constant :throttle_paused_QUEUES
 
-      # {Communicator} message used to notify that queue needs to be paused.
+      # {Communicator} message used to notify that queue needs to be throttle_paused.
       #
       # @return [String]
       PAUSE_MESSAGE = "pause"
@@ -38,12 +38,12 @@ module Sidekiq
 
       # Initializes singleton instance.
       def initialize
-        @paused_queues = Set.new
+        @throttle_paused_queues = Set.new
         @communicator  = Communicator.instance
         @mutex         = Mutex.new
       end
 
-      # Configures Sidekiq server to keep actual list of paused queues.
+      # Configures Sidekiq server to keep actual list of throttle_paused queues.
       #
       # @private
       # @return [void]
@@ -60,22 +60,22 @@ module Sidekiq
         end
       end
 
-      # Returns queues list with paused queues being stripped out.
+      # Returns queues list with throttle_paused queues being stripped out.
       #
       # @private
       # @return [Array<String>]
       def filter(queues)
-        @mutex.synchronize { queues - @paused_queues.to_a }
+        @mutex.synchronize { queues - @throttle_paused_queues.to_a }
       rescue => e
         Sidekiq.logger.error { "[#{self.class}] Failed filter queues: #{e}" }
         queues
       end
 
-      # Returns list of paused queues.
+      # Returns list of throttle_paused queues.
       #
       # @return [Array<String>]
-      def paused_queues
-        Sidekiq.redis { |conn| conn.smembers(PAUSED_QUEUES).to_a }
+      def throttle_paused_queues
+        Sidekiq.redis { |conn| conn.smembers(throttle_paused_QUEUES).to_a }
       end
 
       # Pauses given `queue`.
@@ -86,18 +86,18 @@ module Sidekiq
         queue = QueueName.normalize queue.to_s
 
         Sidekiq.redis do |conn|
-          conn.sadd(PAUSED_QUEUES, queue)
+          conn.sadd(throttle_paused_QUEUES, queue)
           @communicator.transmit(conn, PAUSE_MESSAGE, queue)
         end
       end
 
-      # Checks if given `queue` is paused.
+      # Checks if given `queue` is throttle_paused.
       #
       # @param queue [#to_s]
       # @return [Boolean]
       def throttle_paused?(queue)
         queue = QueueName.normalize queue.to_s
-        Sidekiq.redis { |conn| conn.sismember(PAUSED_QUEUES, queue) }
+        Sidekiq.redis { |conn| conn.sismember(throttle_paused_QUEUES, queue) }
       end
 
       # Resumes given `queue`.
@@ -108,7 +108,7 @@ module Sidekiq
         queue = QueueName.normalize queue.to_s
 
         Sidekiq.redis do |conn|
-          conn.srem(PAUSED_QUEUES, queue)
+          conn.srem(throttle_paused_QUEUES, queue)
           @communicator.transmit(conn, RESUME_MESSAGE, queue)
         end
       end
@@ -117,19 +117,19 @@ module Sidekiq
 
       def add(queue)
         @mutex.synchronize do
-          @paused_queues << QueueName.expand(queue)
+          @throttle_paused_queues << QueueName.expand(queue)
         end
       end
 
       def delete(queue)
         @mutex.synchronize do
-          @paused_queues.delete QueueName.expand(queue)
+          @throttle_paused_queues.delete QueueName.expand(queue)
         end
       end
 
       def sync!
         @mutex.synchronize do
-          @paused_queues.replace(paused_queues.map { |q| QueueName.expand q })
+          @throttle_paused_queues.replace(throttle_paused_queues.map { |q| QueueName.expand q })
         end
       end
 

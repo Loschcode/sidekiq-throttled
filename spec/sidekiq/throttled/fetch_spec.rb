@@ -11,9 +11,9 @@ RSpec.describe Sidekiq::Throttled::Fetch, :sidekiq => :disabled do
   let(:options)       { { :queues => queues } }
   let(:queues)        { %w[heroes dreamers] }
   let(:pauser)        { Sidekiq::Throttled::QueuesPauser.instance }
-  let(:paused_queues) { pauser.instance_variable_get :@paused_queues }
+  let(:throttle_paused_queues) { pauser.instance_variable_get :@throttle_paused_queues }
 
-  before { paused_queues.clear }
+  before { throttle_paused_queues.clear }
 
   describe ".new" do
     it "fails if :queues are missing" do
@@ -139,7 +139,7 @@ RSpec.describe Sidekiq::Throttled::Fetch, :sidekiq => :disabled do
 
         it "filters queues with QueuesPauser" do
           options[:queues] << "xxx"
-          paused_queues.replace %w[queue:xxx]
+          throttle_paused_queues.replace %w[queue:xxx]
 
           Sidekiq.redis do |conn|
             expect(conn).to receive(:brpop)
@@ -162,7 +162,7 @@ RSpec.describe Sidekiq::Throttled::Fetch, :sidekiq => :disabled do
 
         it "filters queues with QueuesPauser" do
           options[:queues] << "xxx"
-          paused_queues.replace %w[queue:xxx]
+          throttle_paused_queues.replace %w[queue:xxx]
 
           Sidekiq.redis do |conn|
             queue_regexp = /^queue:(heroes|dreamers)$/

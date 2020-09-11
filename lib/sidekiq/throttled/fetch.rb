@@ -47,7 +47,7 @@ module Sidekiq
       # @option options [Boolean] :strict (false)
       # @option options [Array<#to_s>] :queue
       def initialize(options)
-        @paused = ExpirableList.new(options.fetch(:throttled_queue_cooldown, TIMEOUT))
+        @throttle_paused = ExpirableList.new(options.fetch(:throttled_queue_cooldown, TIMEOUT))
 
         @strict = options.fetch(:strict, false)
         @queues = options.fetch(:queues).map { |q| QueueName.expand q }
@@ -68,7 +68,7 @@ module Sidekiq
         return work unless work.throttled?
 
         work.requeue_throttled
-        @paused << QueueName.expand(work.queue_name)
+        @throttle_paused << QueueName.expand(work.queue_name)
 
         nil
       end
@@ -96,7 +96,7 @@ module Sidekiq
       # @param [Array<String>] queues
       # @return [Array<String>]
       def filter_queues(queues)
-        QueuesPauser.instance.filter(queues) - @paused.to_a
+        QueuesPauser.instance.filter(queues) - @throttle_paused.to_a
       end
     end
   end

@@ -8,10 +8,10 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
   describe "#setup!" do
     before { allow(Sidekiq).to receive(:server?).and_return true }
 
-    let(:paused_queues) { pauser.instance_variable_get :@paused_queues }
+    let(:throttle_paused_queues) { pauser.instance_variable_get :@throttle_paused_queues }
 
-    it "adds paused queue to the paused list" do
-      paused_queues.replace %w[queue:xxx queue:yyy]
+    it "adds throttle_paused queue to the throttle_paused list" do
+      throttle_paused_queues.replace %w[queue:xxx queue:yyy]
 
       expect(communicator).to receive(:receive).twice do |event, &block|
         block.call "zzz" if "pause" == event
@@ -19,11 +19,11 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
 
       pauser.setup!
 
-      expect(paused_queues).to eq Set.new(%w[queue:xxx queue:yyy queue:zzz])
+      expect(throttle_paused_queues).to eq Set.new(%w[queue:xxx queue:yyy queue:zzz])
     end
 
-    it "removes resumed queue from paused list" do
-      paused_queues.replace %w[queue:xxx queue:yyy]
+    it "removes resumed queue from throttle_paused list" do
+      throttle_paused_queues.replace %w[queue:xxx queue:yyy]
 
       expect(communicator).to receive(:receive).twice do |event, &block|
         block.call "yyy" if "resume" == event
@@ -31,19 +31,19 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
 
       pauser.setup!
 
-      expect(paused_queues).to eq Set.new(%w[queue:xxx])
+      expect(throttle_paused_queues).to eq Set.new(%w[queue:xxx])
     end
 
-    it "resets paused queues each time communicator becomes ready" do
-      paused_queues << "garbage"
+    it "resets throttle_paused queues each time communicator becomes ready" do
+      throttle_paused_queues << "garbage"
 
       expect(communicator).to receive(:ready) do |&block|
         expect(pauser)
-          .to receive(:paused_queues)
+          .to receive(:throttle_paused_queues)
           .and_return(%w[foo bar])
 
         block.call
-        expect(paused_queues).to eq Set.new(%w[queue:foo queue:bar])
+        expect(throttle_paused_queues).to eq Set.new(%w[queue:foo queue:bar])
       end
 
       pauser.setup!
@@ -51,28 +51,28 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
   end
 
   describe "#filter" do
-    it "returns list without paused queues" do
+    it "returns list without throttle_paused queues" do
       queues = %w[queue:xxx queue:yyy queue:zzz]
-      paused = Set.new %w[queue:yyy queue:zzz]
+      throttle_paused = Set.new %w[queue:yyy queue:zzz]
 
-      pauser.instance_variable_set(:@paused_queues, paused)
+      pauser.instance_variable_set(:@throttle_paused_queues, throttle_paused)
       expect(pauser.filter(queues)).to eq %w[queue:xxx]
     end
   end
 
-  describe "#paused_queues" do
-    it "returns list of paused quques" do
+  describe "#throttle_paused_queues" do
+    it "returns list of throttle_paused quques" do
       %w[foo bar].each { |q| pauser.pause! q }
-      expect(pauser.paused_queues).to match_array %w[foo bar]
+      expect(pauser.throttle_paused_queues).to match_array %w[foo bar]
     end
 
     it "fetches list from redis" do
       Sidekiq.redis do |conn|
         expect(conn)
-          .to receive(:smembers).with("throttled:X:paused_queues")
+          .to receive(:smembers).with("throttled:X:throttle_paused_queues")
           .and_call_original
 
-        pauser.paused_queues
+        pauser.throttle_paused_queues
       end
     end
   end
@@ -86,10 +86,10 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
       pauser.pause! "foo:bar"
     end
 
-    it "pushes normalized queue name to the paused queues list" do
+    it "pushes normalized queue name to the throttle_paused queues list" do
       Sidekiq.redis do |conn|
         expect(conn)
-          .to receive(:sadd).with("throttled:X:paused_queues", "xxx")
+          .to receive(:sadd).with("throttled:X:throttle_paused_queues", "xxx")
           .and_call_original
 
         pauser.pause! "foo:bar:queue:xxx"
@@ -118,13 +118,13 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
       pauser.throttle_paused? "xxx"
     end
 
-    context "when queue is paused" do
+    context "when queue is throttle_paused" do
       subject { pauser.throttle_paused? "xxx" }
 
       it { is_expected.to be true }
     end
 
-    context "when queue is not paused" do
+    context "when queue is not throttle_paused" do
       subject { pauser.throttle_paused? "yyy" }
 
       it { is_expected.to be false }
@@ -140,10 +140,10 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
       pauser.resume! "foo:bar"
     end
 
-    it "pushes normalized queue name to the paused queues list" do
+    it "pushes normalized queue name to the throttle_paused queues list" do
       Sidekiq.redis do |conn|
         expect(conn)
-          .to receive(:srem).with("throttled:X:paused_queues", "xxx")
+          .to receive(:srem).with("throttled:X:throttle_paused_queues", "xxx")
           .and_call_original
 
         pauser.resume! "foo:bar:queue:xxx"
