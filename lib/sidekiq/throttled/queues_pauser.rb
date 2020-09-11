@@ -82,7 +82,7 @@ module Sidekiq
       #
       # @param [#to_s] queue
       # @return [void]
-      def pause!(queue)
+      def throttle_pause!(queue)
         queue = QueueName.normalize queue.to_s
 
         Sidekiq.redis do |conn|
@@ -104,7 +104,7 @@ module Sidekiq
       #
       # @param [#to_s] queue
       # @return [void]
-      def resume!(queue)
+      def throttle_resume!(queue)
         queue = QueueName.normalize queue.to_s
 
         Sidekiq.redis do |conn|

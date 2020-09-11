@@ -23,7 +23,7 @@ RSpec.describe Sidekiq::Throttled::Web, :sidekiq => :enabled do
       "args"  => [[]]
     })
 
-    pauser.pause! "xxx"
+    pauser.throttle_pause! "xxx"
   end
 
   let(:pauser) { Sidekiq::Throttled::QueuesPauser.instance }
@@ -53,12 +53,12 @@ RSpec.describe Sidekiq::Throttled::Web, :sidekiq => :enabled do
 
     describe "POST /enhanced-queues/:queue" do
       it "allows pausing the queue" do
-        expect(pauser).to receive(:pause!).with("xxx")
+        expect(pauser).to receive(:throttle_pause!).with("xxx")
         post "/enhanced-queues/xxx", :action => "pause"
       end
 
       it "allows resuming the queue" do
-        expect(pauser).to receive(:resume!).with("xxx")
+        expect(pauser).to receive(:throttle_resume!).with("xxx")
         post "/enhanced-queues/xxx", :action => "resume"
       end
 
@@ -74,7 +74,7 @@ RSpec.describe Sidekiq::Throttled::Web, :sidekiq => :enabled do
     it "allows resuming throttle_paused queues" do
       visit "/enhanced-queues"
 
-      expect(pauser).to receive(:resume!).with("xxx").and_call_original
+      expect(pauser).to receive(:throttle_resume!).with("xxx").and_call_original
 
       find_link(:href => "/queues/xxx").find(:xpath, "../..")
         .click_button("Resume")
@@ -86,7 +86,7 @@ RSpec.describe Sidekiq::Throttled::Web, :sidekiq => :enabled do
     it "allows pausing queues" do
       visit "/enhanced-queues"
 
-      expect(pauser).to receive(:pause!).with("yyy").and_call_original
+      expect(pauser).to receive(:throttle_pause!).with("yyy").and_call_original
 
       find_link(:href => "/queues/yyy").find(:xpath, "../..")
         .click_button("Pause")

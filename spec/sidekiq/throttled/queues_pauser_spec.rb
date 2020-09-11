@@ -62,7 +62,7 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
 
   describe "#throttle_paused_queues" do
     it "returns list of throttle_paused quques" do
-      %w[foo bar].each { |q| pauser.pause! q }
+      %w[foo bar].each { |q| pauser.throttle_pause! q }
       expect(pauser.throttle_paused_queues).to match_array %w[foo bar]
     end
 
@@ -77,13 +77,13 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
     end
   end
 
-  describe "#pause!" do
+  describe "#throttle_pause!" do
     it "normalizes given queue name" do
       expect(Sidekiq::Throttled::QueueName)
         .to receive(:normalize).with("foo:bar")
         .and_call_original
 
-      pauser.pause! "foo:bar"
+      pauser.throttle_pause! "foo:bar"
     end
 
     it "pushes normalized queue name to the throttle_paused queues list" do
@@ -92,7 +92,7 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
           .to receive(:sadd).with("throttled:X:throttle_paused_queues", "xxx")
           .and_call_original
 
-        pauser.pause! "foo:bar:queue:xxx"
+        pauser.throttle_pause! "foo:bar:queue:xxx"
       end
     end
 
@@ -102,13 +102,13 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
           .to receive(:transmit).with(conn, "pause", "xxx")
           .and_call_original
 
-        pauser.pause! "foo:bar:queue:xxx"
+        pauser.throttle_pause! "foo:bar:queue:xxx"
       end
     end
   end
 
   describe "#throttle_paused?" do
-    before { pauser.pause! "xxx" }
+    before { pauser.throttle_pause! "xxx" }
 
     it "normalizes given queue name" do
       expect(Sidekiq::Throttled::QueueName)
@@ -131,13 +131,13 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
     end
   end
 
-  describe "#resume!" do
+  describe "#throttle_resume!" do
     it "normalizes given queue name" do
       expect(Sidekiq::Throttled::QueueName)
         .to receive(:normalize).with("foo:bar")
         .and_call_original
 
-      pauser.resume! "foo:bar"
+      pauser.throttle_resume! "foo:bar"
     end
 
     it "pushes normalized queue name to the throttle_paused queues list" do
@@ -146,7 +146,7 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
           .to receive(:srem).with("throttled:X:throttle_paused_queues", "xxx")
           .and_call_original
 
-        pauser.resume! "foo:bar:queue:xxx"
+        pauser.throttle_resume! "foo:bar:queue:xxx"
       end
     end
 
@@ -156,7 +156,7 @@ RSpec.describe Sidekiq::Throttled::QueuesPauser do
           .to receive(:transmit).with(conn, "resume", "xxx")
           .and_call_original
 
-        pauser.resume! "foo:bar:queue:xxx"
+        pauser.throttle_resume! "foo:bar:queue:xxx"
       end
     end
   end

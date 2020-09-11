@@ -68,8 +68,8 @@ module Sidekiq
           app.post("/enhanced-queues/:name") do
             case params[:action]
             when "delete" then Sidekiq::Queue.new(params[:name]).clear
-            when "pause"  then pauser.pause!(params[:name])
-            else               pauser.resume!(params[:name])
+            when "pause"  then pauser.throttle_pause!(params[:name])
+            else               pauser.throttle_resume!(params[:name])
             end
 
             redirect "#{root_path}enhanced-queues"
