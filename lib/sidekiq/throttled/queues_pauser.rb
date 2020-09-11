@@ -21,8 +21,8 @@ module Sidekiq
       # Redis key of Set with throttle_paused queues.
       #
       # @return [String]
-      throttle_paused_QUEUES = "throttled:X:throttle_paused_queues"
-      private_constant :throttle_paused_QUEUES
+      THROTTLE_PAUSED_QUEUES = "throttled:X:throttle_paused_queues"
+      private_constant :THROTTLE_PAUSED_QUEUES
 
       # {Communicator} message used to notify that queue needs to be throttle_paused.
       #
@@ -75,7 +75,7 @@ module Sidekiq
       #
       # @return [Array<String>]
       def throttle_paused_queues
-        Sidekiq.redis { |conn| conn.smembers(throttle_paused_QUEUES).to_a }
+        Sidekiq.redis { |conn| conn.smembers(THROTTLE_PAUSED_QUEUES).to_a }
       end
 
       # Pauses given `queue`.
@@ -86,7 +86,7 @@ module Sidekiq
         queue = QueueName.normalize queue.to_s
 
         Sidekiq.redis do |conn|
-          conn.sadd(throttle_paused_QUEUES, queue)
+          conn.sadd(THROTTLE_PAUSED_QUEUES, queue)
           @communicator.transmit(conn, PAUSE_MESSAGE, queue)
         end
       end
@@ -97,7 +97,7 @@ module Sidekiq
       # @return [Boolean]
       def throttle_paused?(queue)
         queue = QueueName.normalize queue.to_s
-        Sidekiq.redis { |conn| conn.sismember(throttle_paused_QUEUES, queue) }
+        Sidekiq.redis { |conn| conn.sismember(THROTTLE_PAUSED_QUEUES, queue) }
       end
 
       # Resumes given `queue`.
@@ -108,7 +108,7 @@ module Sidekiq
         queue = QueueName.normalize queue.to_s
 
         Sidekiq.redis do |conn|
-          conn.srem(throttle_paused_QUEUES, queue)
+          conn.srem(THROTTLE_PAUSED_QUEUES, queue)
           @communicator.transmit(conn, RESUME_MESSAGE, queue)
         end
       end
